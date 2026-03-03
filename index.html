@@ -29,6 +29,19 @@
       <p class="hint">Current URL: <code id="current-path"></code></p>
       <ul id="file-list" class="file-list"></ul>
     </section>
+
+    <section class="card">
+      <h2>Create ZIP (CLI)</h2>
+      <p class="hint">
+        ZIP paths are used as URL paths. Build the ZIP from inside your site root.
+      </p>
+      <p><strong>Windows (PowerShell)</strong></p>
+      <pre><code>Set-Location C:\path\to\site-root
+Get-ChildItem -Force | Compress-Archive -DestinationPath ..\site.zip -Force</code></pre>
+      <p><strong>macOS / Linux</strong></p>
+      <pre><code>cd /path/to/site-root
+zip -r ../site.zip .</code></pre>
+    </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>

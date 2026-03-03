@@ -16,6 +16,3 @@ tmp/
 # Python cache
 __pycache__/
 
-# Generated local test archives
-SSV-repo-test.zip
-SFWA-root.zip

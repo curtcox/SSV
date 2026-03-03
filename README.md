@@ -11,6 +11,40 @@ Static Site Viewer (client-only).
 - Serves files through a service worker so they load by path.
 - Provides `/SSV_config.html` to add more files or clear all stored content.
 
+## Create A Compatible ZIP
+
+Rules:
+
+- The ZIP should contain your site files at the ZIP root.
+- Do not wrap everything inside an extra top-level folder unless you want that folder in the URL path.
+- Paths inside the ZIP are the URL paths used by SSV.
+
+Example:
+
+- `index.html` -> `/index.html` (and `/`)
+- `blog/post.html` -> `/blog/post.html`
+
+### Windows (PowerShell)
+
+```powershell
+Set-Location C:\path\to\site-root
+Get-ChildItem -Force | Compress-Archive -DestinationPath ..\site.zip -Force
+```
+
+### macOS
+
+```bash
+cd /path/to/site-root
+zip -r ../site.zip .
+```
+
+### Linux
+
+```bash
+cd /path/to/site-root
+zip -r ../site.zip .
+```
+
 ## Local Run
 
 Run:
