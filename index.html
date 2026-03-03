@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Static Site Viewer</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body data-page="viewer">
+  <main class="panel">
+    <h1>Static Site Viewer</h1>
+    <p class="hint">
+      Upload a single file or a ZIP file. Uploaded paths are kept and served by URL.
+      Manage or reset content at <a href="/SSV_config.html">/SSV_config.html</a>.
+    </p>
+
+    <section class="card">
+      <h2>Add Content</h2>
+      <form id="upload-form">
+        <label for="upload-file">File or ZIP</label>
+        <input id="upload-file" name="upload-file" type="file" required>
+        <button type="submit">Add</button>
+      </form>
+      <p id="status" class="status" aria-live="polite"></p>
+    </section>
+
+    <section class="card">
+      <h2>Stored Files</h2>
+      <p class="hint">Current URL: <code id="current-path"></code></p>
+      <ul id="file-list" class="file-list"></ul>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="/ssv-app.js"></script>
+</body>
+</html>

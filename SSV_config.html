@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SSV Config</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body data-page="config">
+  <main class="panel">
+    <h1>SSV Config</h1>
+    <p class="hint">Manage uploaded files here. This page is always served by the app shell.</p>
+
+    <section class="card">
+      <h2>Add Content</h2>
+      <form id="upload-form">
+        <label for="upload-file">File or ZIP</label>
+        <input id="upload-file" name="upload-file" type="file" required>
+        <button type="submit">Add</button>
+      </form>
+      <p id="status" class="status" aria-live="polite"></p>
+    </section>
+
+    <section class="card">
+      <h2>Stored Files</h2>
+      <ul id="file-list" class="file-list"></ul>
+    </section>
+
+    <section class="card danger">
+      <h2>Reset</h2>
+      <p class="hint">Clear all previously supplied files and start over.</p>
+      <button id="clear-btn" type="button">Clear All Uploaded Content</button>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="/ssv-app.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs and temp
+*.log
+tmp/
+
+# Python cache
+__pycache__/
+
+# Generated local test archives
+SSV-repo-test.zip
+SFWA-root.zip
