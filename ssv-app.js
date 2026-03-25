@@ -4,6 +4,7 @@
   const DB_NAME = "ssv-files";
   const STORE_NAME = "files";
   const RELOAD_KEY = "ssv-sw-reload-once";
+  const ENABLED_KEY = "ssv-enabled";
   const RESERVED_PATHS = new Set([
     "/SSV_config.html",
     "/styles.css",
@@ -45,6 +46,18 @@
   function appUrl(path) {
     const clean = path.startsWith("/") ? path.slice(1) : path;
     return new URL(clean, `${window.location.origin}${APP_BASE_PATH}`).toString();
+  }
+
+  function isEnabled() {
+    return localStorage.getItem(ENABLED_KEY) === "1";
+  }
+
+  function setEnabled(enabled) {
+    if (enabled) {
+      localStorage.setItem(ENABLED_KEY, "1");
+      return;
+    }
+    localStorage.removeItem(ENABLED_KEY);
   }
 
   function normalizePath(inputPath, options) {
@@ -154,20 +167,40 @@
     });
   }
 
-  async function clearAllRecords() {
-    return withStore("readwrite", (store) => {
-      store.clear();
+  function deleteDatabase() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.deleteDatabase(DB_NAME);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+      request.onblocked = () => reject(new Error("Database deletion was blocked."));
     });
   }
 
-  async function registerServiceWorker() {
+  async function getAppRegistration() {
+    if (!("serviceWorker" in navigator)) {
+      return null;
+    }
+
+    const registration = await navigator.serviceWorker.getRegistration(APP_BASE_PATH);
+    if (registration) {
+      return registration;
+    }
+
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    const scopeUrl = new URL(APP_BASE_PATH, window.location.origin).href;
+    return registrations.find((candidate) => candidate.scope === scopeUrl) || null;
+  }
+
+  async function registerServiceWorker(options) {
     if (!("serviceWorker" in navigator)) {
       return;
     }
 
+    const shouldReloadIfNeeded = !options || options.reloadIfNeeded !== false;
+
     await navigator.serviceWorker.register(appUrl("sw.js"), { scope: APP_BASE_PATH });
 
-    if (!navigator.serviceWorker.controller) {
+    if (!navigator.serviceWorker.controller && shouldReloadIfNeeded) {
       const keyValue = sessionStorage.getItem(RELOAD_KEY);
       const reloadKey = `${APP_BASE_PATH}:${location.pathname}`;
       if (keyValue !== reloadKey) {
@@ -178,6 +211,18 @@
     } else {
       sessionStorage.removeItem(RELOAD_KEY);
     }
+  }
+
+  async function uninstallSsv() {
+    setEnabled(false);
+    sessionStorage.removeItem(RELOAD_KEY);
+
+    const registration = await getAppRegistration();
+    if (registration) {
+      await registration.unregister();
+    }
+
+    await deleteDatabase();
   }
 
   function showStatus(text, isError) {
@@ -232,6 +277,11 @@
   }
 
   async function refreshFiles() {
+    if (!isEnabled()) {
+      renderFileList([]);
+      return [];
+    }
+
     const records = await getAllRecords();
     renderFileList(records);
     return records;
@@ -311,11 +361,26 @@
 
     try {
       const uploads = await collectUploads(file);
-      await putMany(uploads);
+      const wasEnabled = isEnabled();
+      const hadController = "serviceWorker" in navigator && Boolean(navigator.serviceWorker.controller);
+
+      setEnabled(true);
+
+      try {
+        await registerServiceWorker({ reloadIfNeeded: false });
+        await putMany(uploads);
+      } catch (error) {
+        if (!wasEnabled) {
+          setEnabled(false);
+        }
+        throw error;
+      }
+
       const records = await refreshFiles();
+      setInstallStateMessage();
       showStatus(`Added ${uploads.length} file(s). Total stored: ${records.length}.`, false);
 
-      if (stripBasePath(location.pathname) === "/" && records.some((r) => r.path === "/index.html")) {
+      if (!hadController || (stripBasePath(location.pathname) === "/" && records.some((r) => r.path === "/index.html"))) {
         location.reload();
       }
     } catch (error) {
@@ -323,18 +388,49 @@
     }
   }
 
+  function setInstallStateMessage() {
+    const stateEl = document.getElementById("install-state");
+    if (!stateEl) {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("uninstalled") === "1") {
+      stateEl.textContent = "SSV is inactive for this origin. Upload a file or ZIP to re-enable it.";
+      stateEl.style.color = "#065f46";
+      return;
+    }
+
+    if (isEnabled()) {
+      stateEl.textContent = "SSV is active for this origin and can intercept matching routes.";
+      stateEl.style.color = "#4b5563";
+      return;
+    }
+
+    stateEl.textContent = "SSV is inactive for this origin. Upload a file or ZIP to enable it.";
+    stateEl.style.color = "#4b5563";
+  }
+
   async function initConfigPage() {
     const clearBtn = document.getElementById("clear-btn");
+    setInstallStateMessage();
     if (clearBtn) {
       clearBtn.addEventListener("click", async () => {
-        const confirmed = window.confirm("Clear all uploaded files?");
+        const confirmed = window.confirm("Clear uploaded content and uninstall SSV for this origin?");
         if (!confirmed) {
           return;
         }
 
-        await clearAllRecords();
-        await refreshFiles();
-        showStatus("All uploaded files were cleared.", false);
+        clearBtn.disabled = true;
+        showStatus("Removing uploaded files and uninstalling SSV...", false);
+
+        try {
+          await uninstallSsv();
+          window.location.assign(appUrl("SSV_config.html?uninstalled=1"));
+        } catch (error) {
+          clearBtn.disabled = false;
+          showStatus(error.message || "Failed to uninstall SSV.", true);
+        }
       });
     }
   }
@@ -348,7 +444,9 @@
 
   async function init() {
     try {
-      await registerServiceWorker();
+      if (isEnabled()) {
+        await registerServiceWorker();
+      }
     } catch (error) {
       showStatus(`Service worker failed: ${error.message || error}`, true);
     }

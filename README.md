@@ -9,7 +9,7 @@ Static Site Viewer (client-only).
 - Persists uploaded files in IndexedDB.
 - Adds files incrementally instead of wiping prior uploads.
 - Serves files through a service worker so they load by path.
-- Provides `/SSV_config.html` to add more files or clear all stored content.
+- Provides `/SSV_config.html` to add more files or uninstall SSV from the current browser and origin.
 
 ## Create A Compatible ZIP
 
@@ -63,6 +63,7 @@ Important:
 
 - Open with `http://` (not `file://`) so service workers work.
 - The first load of a deep path may require one automatic reload so the service worker can take control.
+- `Clear Uploaded Content And Uninstall SSV` removes uploaded files, unregisters the service worker, and prevents SSV from intercepting future routes on that origin until the next upload.
 
 ## Deep-Link Routing Test
 
@@ -73,4 +74,4 @@ Important:
 3. Open `http://localhost:8080/blog/post.html` directly in the address bar.
 4. Hard refresh once if this is the first deep-link request (service worker takeover).
 5. Confirm the uploaded `blog/post.html` content is shown.
-6. Open `http://localhost:8080/SSV_config.html`, click `Clear All Uploaded Content`, and confirm `/blog/post.html` no longer resolves to uploaded content.
+6. Open `http://localhost:8080/SSV_config.html`, click `Clear Uploaded Content And Uninstall SSV`, and confirm `/blog/post.html` no longer resolves to uploaded content.
